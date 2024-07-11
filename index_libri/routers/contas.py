@@ -6,59 +6,93 @@ from sqlalchemy.orm import Session
 
 from index_libri.database import get_session
 from index_libri.models import User
-from index_libri.schemas import ContaPublic, ContaSchema
+from index_libri.schemas import ContaList, ContaPublic, ContaSchema, Message
 
 router = APIRouter(prefix='/contas', tags=['contas'])
 
 
-# @router.post('/', status_code=HTTPStatus.CREATED, response_model=ContaPublic)
-# def create_conta(conta: ContaSchema, session: Session = Depends(get_session)):
-#     db_user = session.scalar(
-#         select(User).where(User.username == conta.username)
-#     )
-#     if db_user:
+@router.post('/', status_code=HTTPStatus.CREATED, response_model=ContaPublic)
+def create_conta(conta: ContaSchema, session: Session = Depends(get_session)):
+    db_user = session.scalar(
+        select(User).where(
+            (User.username == conta.username) | (User.email == conta.email)
+        )
+    )
+    if db_user:
+        if db_user.username == conta.username:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail='Username já registrado',
+            )
+        elif db_user.email == conta.email:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail='Email já registrado',
+            )
+    fake_hashed_password = conta.password + 'fakehashed'
+    db_user = User(
+        username=conta.username,
+        email=conta.email,
+        hashed_password=fake_hashed_password,
+    )
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+
+    return db_user
+
+
+@router.get('/', status_code=HTTPStatus.OK, response_model=ContaList)
+def read_contas(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
+):
+    users = session.scalars(select(User).offset(skip).limit(limit)).all()
+    return {'contas': users}
+
+
+# @router.get(
+#     '/{id}', response_model=ContaList, status_code=HTTPStatus.OK
+# )
+# def read_contas_with_id(
+#     id: int, conta: ContaPublic, session: Session = Depends(get_session)
+# ):
+#     user = session.scalar(select(User).where(conta.id == id))
+#     if not user:
 #         raise HTTPException(
-#             status_code=HTTPStatus.BAD_REQUEST,
-#             detail='Username já registrado',
+#             status_code=HTTPStatus.NOT_FOUND, detail='Usuário não encontrado'
 #         )
-#     fake_hashed_password = conta.password + 'fakehashed'
-#     db_user = User(
-#         username=conta.username,
-#         email=conta.email,
-#         hashed_password=fake_hashed_password,
-#     )
-#     session.add(db_user)
-#     session.commit()
-#     session.refresh(db_user)
 
-#     return db_user
+#     return {'conta': user}
 
 
-# @router.get('/', response_model=ContaList)
-# def read_contas():
-#     return {'contas': database}
+@router.put('/{conta_id}', response_model=ContaPublic)
+def update_conta(
+    conta_id: int, conta: ContaSchema, session: Session = Depends(get_session)
+):
+    db_user = session.scalar(select(User).where(User.id == conta_id))
+    if not db_user:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='Usuário não encontrado'
+        )
+
+    db_user.username = conta.username
+    db_user.email = conta.email
+    db_user.hashed_password = conta.password
+    session.commit()
+    session.refresh(db_user)
+
+    return db_user
 
 
-# @router.get('/contas/{id}', response_model=ContaList)
-# def read_contas_with_id():
+@router.delete('/{conta_id}', response_model=Message)
+def delete_conta(conta_id: int, session: Session = Depends(get_session)):
+    db_user = session.scalar(select(User).where(User.id == conta_id))
+    if not db_user:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='Usuário não encontrado'
+        )
 
+    session.delete(db_user)
+    session.commit()
 
-# @router.put('/{conta_id}', response_model=ContaPublic)
-# def update_conta(conta_id: int, conta: ContaSchema):
-#     if conta_id > len(database) or conta_id < 1:
-#         raise HTTPException(status_code=HTTPStatus.NOT_FOUND)
-
-#     conta_with_id = ContaDB(**conta.model_dump(), id=conta_id)
-#     database[conta_id - 1] = conta_with_id
-
-#     return conta_with_id
-
-
-# @router.delete('/{conta_id}', response_model=Message)
-# def delete_conta(conta_id: int):
-#     if conta_id > len(database) or conta_id < 1:
-#         raise HTTPException(status_code=HTTPStatus.NOT_FOUND)
-
-#     del database[conta_id - 1]
-
-#     return {'message': 'Conta deletada com sucesso'}
+    return {'message': 'Conta deletada com sucesso'}

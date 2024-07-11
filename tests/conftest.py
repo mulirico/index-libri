@@ -5,12 +5,20 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from index_libri.app import app
-from index_libri.models import table_registry
+from index_libri.database import get_session
+from index_libri.models import User, table_registry
 
 
 @pytest.fixture()
-def client():
-    return TestClient(app)
+def client(session):
+    def get_session_override():
+        return session
+
+    with TestClient(app) as client:
+        app.dependency_overrides[get_session] = get_session_override
+        yield client
+
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture()
@@ -26,3 +34,15 @@ def session():
         yield session
 
     table_registry.metadata.drop_all(engine)
+
+
+@pytest.fixture()
+def user(session):
+    user = User(
+        username='Teste', email='teste@test.com', hashed_password='testtest'
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    return user
