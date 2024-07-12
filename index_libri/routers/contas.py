@@ -7,6 +7,10 @@ from sqlalchemy.orm import Session
 from index_libri.database import get_session
 from index_libri.models import User
 from index_libri.schemas import ContaList, ContaPublic, ContaSchema, Message
+from index_libri.security import (
+    get_current_user,
+    get_password_hash,
+)
 
 router = APIRouter(prefix='/contas', tags=['contas'])
 
@@ -29,11 +33,11 @@ def create_conta(conta: ContaSchema, session: Session = Depends(get_session)):
                 status_code=HTTPStatus.BAD_REQUEST,
                 detail='Email já registrado',
             )
-    fake_hashed_password = conta.password + 'fakehashed'
+    hash_password = get_password_hash(conta.password)
     db_user = User(
         username=conta.username,
         email=conta.email,
-        hashed_password=fake_hashed_password,
+        hashed_password=hash_password,
     )
     session.add(db_user)
     session.commit()
@@ -67,32 +71,39 @@ def read_contas(
 
 @router.put('/{conta_id}', response_model=ContaPublic)
 def update_conta(
-    conta_id: int, conta: ContaSchema, session: Session = Depends(get_session)
+    conta_id: int,
+    conta: ContaSchema,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    db_user = session.scalar(select(User).where(User.id == conta_id))
-    if not db_user:
+    if current_user.id != conta_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='Usuário não encontrado'
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='Não autorizado',
         )
 
-    db_user.username = conta.username
-    db_user.email = conta.email
-    db_user.hashed_password = conta.password
+    current_user.username = conta.username
+    current_user.email = conta.email
+    current_user.hashed_password = get_password_hash(conta.password)
     session.commit()
-    session.refresh(db_user)
+    session.refresh(current_user)
 
-    return db_user
+    return current_user
 
 
 @router.delete('/{conta_id}', response_model=Message)
-def delete_conta(conta_id: int, session: Session = Depends(get_session)):
-    db_user = session.scalar(select(User).where(User.id == conta_id))
-    if not db_user:
+def delete_conta(
+    conta_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.id != conta_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='Usuário não encontrado'
+            status_code=HTTPStatus.FORBIDDEN,
+            detail='Não autorizado',
         )
 
-    session.delete(db_user)
+    session.delete(current_user)
     session.commit()
 
     return {'message': 'Conta deletada com sucesso'}

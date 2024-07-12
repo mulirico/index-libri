@@ -60,22 +60,10 @@ def test_read_conta_with_users(client, user):
 #     assert response.json() == {'conta': [user_schema]}
 
 
-def test_update_conta_nao_registrada(client, user):
+def test_update_user(client, user, token):
     response = client.put(
-        '/contas/2',
-        json={
-            'username': 'mujica',
-            'email': 'mujica@test.com',
-            'password': 'novasenha',
-        },
-    )
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'Usuário não encontrado'}
-
-
-def test_update_user(client, user):
-    response = client.put(
-        '/contas/1',
+        f'/contas/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'mujica',
             'email': 'mujica@test.com',
@@ -86,18 +74,15 @@ def test_update_user(client, user):
     assert response.json() == {
         'username': 'mujica',
         'email': 'mujica@test.com',
-        'id': 1,
+        'id': user.id,
     }
 
 
-def test_delete_conta_nao_registrada(client):
-    response = client.delete('/contas/0')
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'Usuário não encontrado'}
-
-
-def test_delete_conta(client, user):
-    response = client.delete('/contas/1')
+def test_delete_conta(client, user, token):
+    response = client.delete(
+        f'/contas/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'Conta deletada com sucesso'}
