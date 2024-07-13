@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -13,10 +14,12 @@ from index_libri.security import (
 )
 
 router = APIRouter(prefix='/contas', tags=['contas'])
+aSession = Annotated[Session, Depends(get_session)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.post('/', status_code=HTTPStatus.CREATED, response_model=ContaPublic)
-def create_conta(conta: ContaSchema, session: Session = Depends(get_session)):
+def create_conta(conta: ContaSchema, session: aSession):
     db_user = session.scalar(
         select(User).where(
             (User.username == conta.username) | (User.email == conta.email)
@@ -47,9 +50,7 @@ def create_conta(conta: ContaSchema, session: Session = Depends(get_session)):
 
 
 @router.get('/', status_code=HTTPStatus.OK, response_model=ContaList)
-def read_contas(
-    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
-):
+def read_contas(session: aSession, skip: int = 0, limit: int = 100):
     users = session.scalars(select(User).offset(skip).limit(limit)).all()
     return {'contas': users}
 
@@ -73,8 +74,8 @@ def read_contas(
 def update_conta(
     conta_id: int,
     conta: ContaSchema,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    session: aSession,
+    current_user: CurrentUser,
 ):
     if current_user.id != conta_id:
         raise HTTPException(
@@ -94,8 +95,8 @@ def update_conta(
 @router.delete('/{conta_id}', response_model=Message)
 def delete_conta(
     conta_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    session: aSession,
+    current_user: CurrentUser,
 ):
     if current_user.id != conta_id:
         raise HTTPException(
