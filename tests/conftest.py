@@ -1,3 +1,4 @@
+import factory
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,6 +9,17 @@ from index_libri.app import app
 from index_libri.database import get_session
 from index_libri.models import User, table_registry
 from index_libri.security import get_password_hash
+
+
+class ContaFactory(factory.Factory):
+    class Meta:
+        model = User
+
+    username = factory.sequence(lambda n: f'test{n}')
+    email = factory.LazyAttribute(lambda obj: f'{obj.username}@test.com')
+    hashed_password = factory.LazyAttribute(
+        lambda obj: f'{obj.username}@example.com'
+    )
 
 
 @pytest.fixture()
@@ -40,15 +52,25 @@ def session():
 @pytest.fixture()
 def user(session):
     password = 'testando'
-    user = User(
-        username='Teste',
-        email='teste@test.com',
-        hashed_password=get_password_hash(password),
-    )
+    user = ContaFactory(hashed_password=get_password_hash(password))
     session.add(user)
     session.commit()
     session.refresh(user)
     user.clean_password = 'testando'
+
+    return user
+
+
+@pytest.fixture()
+def other_user(session):
+    password = 'testando2'
+    user = ContaFactory(hashed_password=get_password_hash(password))
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    user.clean_password = 'testando2'
 
     return user
 

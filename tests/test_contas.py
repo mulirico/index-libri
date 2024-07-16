@@ -24,9 +24,9 @@ def test_create_conta_with_exist_username(client, user):
     response = client.post(
         '/contas',
         json={
-            'username': 'Teste',
-            'email': 'novoteste@test.com',
-            'password': 'testtest',
+            'username': user.username,
+            'email': user.email,
+            'password': user.hashed_password,
         },
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
@@ -37,9 +37,9 @@ def test_create_conta_with_exist_email(client, user):
     response = client.post(
         '/contas',
         json={
-            'username': 'NovoTeste',
-            'email': 'teste@test.com',
-            'password': 'testtest',
+            'username': 'teste',
+            'email': user.email,
+            'password': user.hashed_password,
         },
     )
     assert response.status_code == HTTPStatus.BAD_REQUEST
@@ -78,6 +78,21 @@ def test_update_user(client, user, token):
     }
 
 
+def test_update_conta_without_permission(client, other_user, token):
+    response = client.put(
+        f'/contas/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'mujica',
+            'email': 'mujica@test.com',
+            'password': 'password',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Não autorizado'}
+
+
 def test_delete_conta(client, user, token):
     response = client.delete(
         f'/contas/{user.id}',
@@ -86,3 +101,13 @@ def test_delete_conta(client, user, token):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'Conta deletada com sucesso'}
+
+
+def test_delete_conta_without_permission(client, other_user, token):
+    response = client.delete(
+        f'/contas/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Não autorizado'}
