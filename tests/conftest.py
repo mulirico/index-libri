@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from index_libri.app import app
 from index_libri.database import get_session
-from index_libri.models import User, table_registry
+from index_libri.models import Romancista, User, table_registry
 from index_libri.security import get_password_hash
 
 
@@ -20,6 +20,13 @@ class ContaFactory(factory.Factory):
     hashed_password = factory.LazyAttribute(
         lambda obj: f'{obj.username}@example.com'
     )
+
+
+class RomancistaFactory(factory.Factory):
+    class Meta:
+        model = Romancista
+
+    nome = factory.sequence(lambda n: f'test{n}')
 
 
 @pytest.fixture()
@@ -82,3 +89,13 @@ def token(client, user):
         data={'username': user.email, 'password': user.clean_password},
     )
     return response.json()['access_token']
+
+
+@pytest.fixture()
+def autora(session):
+    autora = RomancistaFactory()
+    session.add(autora)
+    session.commit()
+    session.refresh(autora)
+
+    return autora
