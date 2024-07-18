@@ -1,9 +1,9 @@
 from http import HTTPStatus
 
 
-def test_create_romancista(client, user, token):
+def test_create_romancista(client, token):
     response = client.post(
-        f'/romancista/{user.id}',
+        '/romancista',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'nome': 'Clarice Lispector',
@@ -17,9 +17,9 @@ def test_create_romancista(client, user, token):
     }
 
 
-def test_create_romancista_with_autora(client, autora, user, token):
+def test_create_romancista_with_autora(client, autora, token):
     response = client.post(
-        f'/romancista/{user.id}',
+        '/romancista',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'nome': autora.nome,
@@ -30,12 +30,10 @@ def test_create_romancista_with_autora(client, autora, user, token):
     assert response.json() == {'detail': 'Romancista já consta no MADR'}
 
 
-def test_create_romancista_without_permission(
-    client, other_user, autora, token
-):
+def test_create_romancista_without_permission(client, autora):
     response = client.post(
-        f'/romancista/{other_user.id}',
-        headers={'Authorization': f'Bearer {token}'},
+        '/romancista',
+        headers={'Authorization': 'Bearer $token invalido'},
         json={'nome': autora.nome},
     )
     assert response.status_code == HTTPStatus.UNAUTHORIZED

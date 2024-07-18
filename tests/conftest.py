@@ -1,4 +1,4 @@
-import factory
+import factory.fuzzy
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from index_libri.app import app
 from index_libri.database import get_session
-from index_libri.models import Romancista, User, table_registry
+from index_libri.models import Livro, Romancista, User, table_registry
 from index_libri.security import get_password_hash
 
 
@@ -27,6 +27,15 @@ class RomancistaFactory(factory.Factory):
         model = Romancista
 
     nome = factory.sequence(lambda n: f'test{n}')
+
+
+class LivroFactory(factory.Factory):
+    class Meta:
+        model = Livro
+
+    titulo = factory.Faker('text')
+    ano = factory.Faker('pyint', min_value=0, max_value=1000)
+    id_romancista = factory.Faker('pyint', min_value=0, max_value=1000)
 
 
 @pytest.fixture()
@@ -99,3 +108,13 @@ def autora(session):
     session.refresh(autora)
 
     return autora
+
+
+@pytest.fixture()
+def livro(session):
+    livro = LivroFactory()
+    session.add(livro)
+    session.commit()
+    session.refresh(livro)
+
+    return livro

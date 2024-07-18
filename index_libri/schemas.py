@@ -39,6 +39,19 @@ class RomancistaList(BaseModel):
     romancistas: list[RomancistaPublic]
 
 
+# Schemas da rota livro
+class LivroPublic(BaseModel):
+    titulo: str
+    ano: int
+    id_romancista: int
+
+
+class LivroSchema(BaseModel):
+    titulo: str
+    ano: int
+    id_romancista: int
+
+
 # Schemas de autenticação
 class Token(BaseModel):
     access_token: str

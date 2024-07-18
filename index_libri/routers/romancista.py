@@ -16,21 +16,15 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 @router.post(
-    '/{user_id}',
+    '/',
     status_code=HTTPStatus.CREATED,
     response_model=RomancistaPublic,
 )
 def create_romancista(
-    user_id: int,
     romancista: RomancistaSchema,
     session: aSession,
     user: CurrentUser,
 ):
-    if user.id != user_id:
-        raise HTTPException(
-            status_code=HTTPStatus.UNAUTHORIZED, detail='Não autorizado'
-        )
-
     db_romancista = session.scalar(
         select(Romancista).where(Romancista.nome == romancista.nome)
     )
