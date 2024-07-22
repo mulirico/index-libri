@@ -39,6 +39,11 @@ class RomancistaList(BaseModel):
     romancistas: list[RomancistaPublic]
 
 
+class RomancistaUpdate(BaseModel):
+    id: int | None = None
+    nome: str | None = None
+
+
 # Schemas da rota livro
 class LivroPublic(BaseModel):
     titulo: str

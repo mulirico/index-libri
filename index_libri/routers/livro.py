@@ -57,3 +57,22 @@ def create_livro(
     session.refresh(db_romancista)
 
     return db_livro
+
+
+@router.get(
+    '/{item_id}', status_code=HTTPStatus.OK, response_model=LivroPublic
+)
+def get_livro_by_id(
+    item_id: int,
+    user: CurrentUser,
+    session: aSession,
+):
+    db_livro = session.scalar(select(Livro).where(Livro.id == item_id))
+
+    if not db_livro:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail='Livro não consta no MADR',
+        )
+
+    return db_livro

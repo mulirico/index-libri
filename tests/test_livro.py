@@ -51,3 +51,29 @@ def test_create_livro_without_romancista(client, token):
     assert response.json() == {
         'detail': 'Romancista não encontrado, insira a autoria primeiro',
     }
+
+
+def test_get_livro_by_id(client, token, livro):
+    response = client.get(
+        f'/livro/{livro.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'titulo': livro.titulo,
+        'ano': livro.ano,
+        'id_romancista': livro.id_romancista,
+    }
+
+
+def test_get_livro_by_id_inexistent(client, token):
+    response = client.get(
+        '/livro/0',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {
+        'detail': 'Livro não consta no MADR',
+    }
