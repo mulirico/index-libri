@@ -57,6 +57,17 @@ class LivroSchema(BaseModel):
     id_romancista: int
 
 
+class LivroList(BaseModel):
+    livros: list[LivroPublic]
+
+
+class LivroUpdate(BaseModel):
+    id: int | None = None
+    titulo: str | None = None
+    ano: int | None = None
+    id_romancista: int | None = None
+
+
 # Schemas de autenticação
 class Token(BaseModel):
     access_token: str
