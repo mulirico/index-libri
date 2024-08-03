@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
+from testcontainers.postgres import PostgresContainer
 
 from index_libri.app import app
 from index_libri.database import get_session
@@ -35,7 +35,7 @@ class LivroFactory(factory.Factory):
 
     titulo = factory.Faker('text')
     ano = factory.Faker('pyint', min_value=0, max_value=1000)
-    id_romancista = factory.Faker('pyint', min_value=0, max_value=1000)
+    id_romancista = 1
 
 
 @pytest.fixture()
@@ -50,17 +50,22 @@ def client(session):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(scope='session')
+def engine():
+    with PostgresContainer('postgres:16', driver='psycopg') as postgres:
+        _engine = create_engine(postgres.get_connection_url())
+
+        with _engine.begin():
+            yield _engine
+
+
 @pytest.fixture()
-def session():
-    engine = create_engine(
-        'sqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool,
-    )
+def session(engine):
     table_registry.metadata.create_all(engine)
 
     with Session(engine) as session:
         yield session
+        session.rollback()
 
     table_registry.metadata.drop_all(engine)
 
@@ -112,9 +117,13 @@ def autora(session):
 
 @pytest.fixture()
 def livro(session):
+    romancista = Romancista(nome='Autora')
+    session.add(romancista)
+    session.commit()
     livro = LivroFactory()
     session.add(livro)
     session.commit()
+    session.refresh(romancista)
     session.refresh(livro)
 
     return livro

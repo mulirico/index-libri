@@ -28,7 +28,7 @@ def test_create_livro_existente(client, token, livro):
         json={
             'titulo': livro.titulo,
             'ano': livro.ano,
-            'id_romancista': livro.id_romancista,
+            'id_romancista': 1,
         },
     )
 
@@ -81,8 +81,9 @@ def test_get_livro_by_id_inexistent(client, token):
     }
 
 
-def test_read_livro_return_2(client, token, session):
-    expected_livros = 2
+def test_read_livro_return_3(client, token, session, livro):
+    expected_livros = 3
+    session.add(livro)
     session.bulk_save_objects(LivroFactory.create_batch(2))
     session.commit()
 
@@ -94,8 +95,9 @@ def test_read_livro_return_2(client, token, session):
     assert len(response.json()['livros']) == expected_livros
 
 
-def test_read_livro_return_limit_2(client, token, session):
+def test_read_livro_return_limit_2(client, token, session, livro):
     expected_livros = 2
+    session.add(livro)
     session.bulk_save_objects(LivroFactory.create_batch(5))
     session.commit()
 
@@ -107,8 +109,9 @@ def test_read_livro_return_limit_2(client, token, session):
     assert len(response.json()['livros']) == expected_livros
 
 
-def test_read_livro_titulo(client, token, session):
+def test_read_livro_titulo(client, token, session, livro):
     expected_livros = 1
+    session.add(livro)
     session.bulk_save_objects(LivroFactory.create_batch(1, titulo='titulo'))
     session.commit()
 
@@ -120,8 +123,9 @@ def test_read_livro_titulo(client, token, session):
     assert len(response.json()['livros']) == expected_livros
 
 
-def test_read_livro_ano(client, token, session):
+def test_read_livro_ano(client, token, session, livro):
     expected_livros = 1
+    session.add(livro)
     session.bulk_save_objects(LivroFactory.create_batch(1, ano=1111))
     session.commit()
 
@@ -133,21 +137,23 @@ def test_read_livro_ano(client, token, session):
     assert len(response.json()['livros']) == expected_livros
 
 
-def test_read_livro_idromancista(client, token, session):
-    expected_livros = 1
-    session.bulk_save_objects(LivroFactory.create_batch(1, id_romancista=100))
+def test_read_livro_idromancista(client, token, session, livro):
+    expected_livros = 2
+    session.add(livro)
+    session.bulk_save_objects(LivroFactory.create_batch(1, id_romancista=1))
     session.commit()
 
     response = client.get(
-        '/livro/?id_romancista=100',
+        '/livro/?id_romancista=1',
         headers={'Authorization': f'Bearer {token}'},
     )
 
     assert len(response.json()['livros']) == expected_livros
 
 
-def test_read_livro_filters_combined(client, token, session):
+def test_read_livro_filters_combined(client, token, session, livro):
     expected_livros = 1
+    session.add(livro)
     session.bulk_save_objects(
         LivroFactory.create_batch(1, titulo='mujica', ano=10)
     )
