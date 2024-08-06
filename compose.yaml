@@ -1,8 +1,8 @@
 services:
-  indexlibri_db:
+  indexlibri_database:
     image: postgres
     volumes:
-      - pgdata:/var/lib/postgres/data
+      - pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: app_user
       POSTGRES_DB: app_db
@@ -14,12 +14,12 @@ services:
     image: indexlibri_app
     entrypoint: ./entrypoint.sh
     build: .
-    ports: 
+    ports:
       - "8000:8000"
     depends_on:
-      - indexlibri_db
+      - indexlibri_database
     environment:
-      DATABASE_URL: postgresql+psycopg://app_user:app_password@localhost:5432/app_db
+      DATABASE_URL: postgresql+psycopg://app_user:app_password@indexlibri_database:5432/app_db
 
 volumes:
   pgdata:
