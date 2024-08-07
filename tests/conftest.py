@@ -8,6 +8,7 @@ from testcontainers.postgres import PostgresContainer
 from index_libri.app import app
 from index_libri.database import get_session
 from index_libri.models import Livro, Romancista, User, table_registry
+from index_libri.sanitize import sanitize
 from index_libri.security import get_password_hash
 
 
@@ -33,7 +34,7 @@ class LivroFactory(factory.Factory):
     class Meta:
         model = Livro
 
-    titulo = factory.Faker('text')
+    titulo = factory.fuzzy.FuzzyText(length=20)
     ano = factory.Faker('pyint', min_value=0, max_value=1000)
     id_romancista = 1
 
@@ -121,6 +122,7 @@ def livro(session):
     session.add(romancista)
     session.commit()
     livro = LivroFactory()
+    livro.titulo = sanitize(livro.titulo)
     session.add(livro)
     session.commit()
     session.refresh(romancista)

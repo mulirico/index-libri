@@ -15,7 +15,7 @@ def test_create_romancista(client, token):
     assert response.status_code == HTTPStatus.CREATED
     assert response.json() == {
         'id': 1,
-        'nome': 'Clarice Lispector',
+        'nome': 'clarice lispector',
     }
 
 

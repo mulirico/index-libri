@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+
+from index_libri.sanitize import sanitize
 
 
 class Message(BaseModel):
@@ -12,6 +14,10 @@ class ContaSchema(BaseModel):
     username: str
     email: EmailStr
     password: str
+
+    @field_validator('username')
+    def sanitize_username(cls, v):
+        return sanitize(v)
 
 
 class ContaPublic(BaseModel):
@@ -34,6 +40,10 @@ class RomancistaPublic(BaseModel):
 class RomancistaSchema(BaseModel):
     nome: str
 
+    @field_validator('nome')
+    def sanitize_nome(cls, v):
+        return sanitize(v)
+
 
 class RomancistaList(BaseModel):
     romancistas: list[RomancistaPublic]
@@ -42,6 +52,10 @@ class RomancistaList(BaseModel):
 class RomancistaUpdate(BaseModel):
     id: int | None = None
     nome: str | None = None
+
+    @field_validator('nome')
+    def sanitize_nome(cls, v):
+        return sanitize(v)
 
 
 # Schemas da rota livro
@@ -56,6 +70,10 @@ class LivroSchema(BaseModel):
     ano: int
     id_romancista: int
 
+    @field_validator('titulo')
+    def sanitize_titulo(cls, v):
+        return sanitize(v)
+
 
 class LivroList(BaseModel):
     livros: list[LivroPublic]
@@ -66,6 +84,10 @@ class LivroUpdate(BaseModel):
     titulo: str | None = None
     ano: int | None = None
     id_romancista: int | None = None
+
+    @field_validator('titulo')
+    def sanitize_titulo(cls, v):
+        return sanitize(v)
 
 
 # Schemas de autenticação

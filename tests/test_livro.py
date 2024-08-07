@@ -8,7 +8,7 @@ def test_create_livro(client, token, autora):
         '/livro',
         headers={'Authorization': f'Bearer {token}'},
         json={
-            'titulo': 'tarde no quintal',
+            'titulo': 'TarDe no Quintal',
             'ano': 1998,
             'id_romancista': autora.id,
         },
